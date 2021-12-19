@@ -31,6 +31,22 @@ function readInput(path)
 end
 
 function solve(nodes)
+    function canAdd(n, path)
+        if !(n in path) || n.big
+            return true
+        elseif n.name == "start" || n.name == "end"
+            return false
+        else
+            ok = true
+            for m in unique(path)
+                if !m.big && count(x -> x==m, path) > 1
+                    ok = false
+                end
+            end
+            return ok
+        end
+    end
+
     paths = 0
     stack = [nodes["start"]]
     path = []
@@ -45,7 +61,7 @@ function solve(nodes)
             push!(stack, head)
             push!(path, head)
             for n in head.neighbors
-                if n.big || !(n in path)
+                if canAdd(n, path)
                     push!(stack, n)
                 end
             end
@@ -55,7 +71,7 @@ function solve(nodes)
 end
 
 input = readInput("in.txt")
-# benchmark = @benchmark solve(input)
-# display(benchmark)
+benchmark = @benchmark solve(input)
+display(benchmark)
 result = solve(input)
 display(result)
