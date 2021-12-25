@@ -2,17 +2,9 @@ using DelimitedFiles
 using BenchmarkTools
 
 function readInput(path)
-    sortstr(s) = join(sort!(collect(s)))
-
     open(path, "r") do f
-        rows = split.(readdlm(f, '\n', String))
-        cols = [i for i in Iterators.flatten((1:10, 12:15))]
-        m = Matrix{String}(undef, length(rows), length(cols))
-        for (i,r) in enumerate(eachrow(m))
-            r .= map(sortstr, rows[i][cols])
-            sort!(@view r[1:10])
-        end
-        return m
+        rows = readdlm(f, ' ', String, '\n')[:,union(1:10, 12:15)]
+        return [Set(collect(rows[i,j])) for i in 1:size(rows)[1], j in 1:size(rows)[2]]
     end
 end
 
@@ -46,27 +38,37 @@ function solve(input)
         6 => [1,3,4,5,6,7],
         7 => [1,2,3],
         8 => [1,2,3,4,5,6,7],
-        9 => [1,2,3,6,7]
+        9 => [1,2,3,4,6,7]
     )
 
     letters = ['a','b','c','d','e','f','g']
 
-    num2str(n, layout) = join(sort!(letters[layout[segments[n]]]))
+    num2set(n, layout) = Set(letters[layout[segments[n]]])
 
-    LUT = Dict{Vector{String}, Vector{Int32}}()
+    LUT = Dict{Set{Set{Char}}, Vector{Int32}}()
     for p in eachrow(permutations(1:7))
-        k = sort!([num2str(i, p) for i in 0:9])
+        k = Set([num2set(i, p) for i in 0:9])
         LUT[k] = p
     end
 
-    for l in eachrow(input)
-        p = LUT[@view l[1:10]]
-        display(p)
+    count = 0
+    for r in eachrow(input)
+        k = Set(r[1:10])
+        v = letters[LUT[k]]
+        for (i,d) in enumerate(r[11:14])
+            for n in 0:9
+                if d == Set(v[segments[n]])
+                    count += 10^(4-i) * n
+                end
+            end
+        end
     end
+
+    return count
 end
 
 input = readInput("in.txt")
-# benchmark = @benchmark solve(input)
-# display(benchmark)
+benchmark = @benchmark solve(input)
+display(benchmark)
 result = solve(input)
 display(result)
